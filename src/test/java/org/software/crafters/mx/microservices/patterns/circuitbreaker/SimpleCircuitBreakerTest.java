@@ -2,6 +2,8 @@ package org.software.crafters.mx.microservices.patterns.circuitbreaker;
 
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 public class SimpleCircuitBreakerTest {
 
     @Test
