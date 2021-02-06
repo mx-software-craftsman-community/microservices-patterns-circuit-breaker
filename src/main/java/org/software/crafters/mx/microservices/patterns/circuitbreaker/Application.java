@@ -1,4 +1,4 @@
-package org.software.crafters.mx.microservicespatternscircuitbreaker;
+package org.software.crafters.mx.microservices.patterns.circuitbreaker;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
