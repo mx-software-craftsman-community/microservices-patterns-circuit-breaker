@@ -34,7 +34,7 @@ public class SimpleCircuitBreakerTest {
         while(failureCounter < circuitBreaker.getFailureThreshold() - 1) {
             try {
                 circuitBreaker.call(null);
-            } catch (IllegalArgumentException) {
+            } catch (IllegalArgumentException e) {
                 failureCounter++;
             }
         }
