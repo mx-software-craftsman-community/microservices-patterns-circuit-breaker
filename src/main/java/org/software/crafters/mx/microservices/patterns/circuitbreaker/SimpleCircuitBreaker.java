@@ -5,6 +5,7 @@ import java.util.function.Function;
 public class SimpleCircuitBreaker<T, R> {
 
     private final Function<T, R> protectedFunction;
+    private Status status;
     private final int failureThreshold;
     private int failureCount;
 
@@ -14,6 +15,7 @@ public class SimpleCircuitBreaker<T, R> {
 
     public SimpleCircuitBreaker(Function<T, R> protectedFunction, int failureThreshold) {
         this.protectedFunction = protectedFunction;
+        this.status = Status.CLOSED;
         this.failureThreshold = failureThreshold;
         this.failureCount = 0;
     }
@@ -23,12 +25,23 @@ public class SimpleCircuitBreaker<T, R> {
             return protectedFunction.apply(arg);
         } catch (Exception e) {
             failureCount++;
+            if(failureCountReachesThreshold()) {
+                trip();
+            }
             throw e;
         }
     }
 
+    private boolean failureCountReachesThreshold() {
+        return failureCount == failureThreshold;
+    }
+
+    private void trip() {
+        this.status = Status.OPEN;
+    }
+
     public Status getStatus() {
-        return Status.CLOSED;
+        return status;
     }
 
     public int getFailureThreshold() {
