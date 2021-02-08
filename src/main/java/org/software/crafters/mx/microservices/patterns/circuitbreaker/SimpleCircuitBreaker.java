@@ -39,5 +39,5 @@ public class SimpleCircuitBreaker<T, R> {
         return failureCount;
     }
 
-    public enum Status {CLOSED}
+    public enum Status {OPEN, CLOSED}
 }
