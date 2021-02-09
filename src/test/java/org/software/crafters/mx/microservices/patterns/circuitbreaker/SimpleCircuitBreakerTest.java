@@ -1,18 +1,30 @@
 package org.software.crafters.mx.microservices.patterns.circuitbreaker;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import java.util.function.Function;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class SimpleCircuitBreakerTest {
 
+    private Function<String, String> protectedFunction;
+
+    @BeforeEach
+    public void setup() {
+        protectedFunction = name -> {
+            if (name != null) {
+                return String.format("Hello %s!", name);
+            }
+            throw new IllegalArgumentException("Invalid argument: name cannot be null");
+        };
+    }
+
     @Test
     public void callFunctionSuccessfully() throws Exception {
         System.out.println("Test - Call function successfully [Closed status]");
-        SimpleCircuitBreaker<String, String> circuitBreaker =
-                new SimpleCircuitBreaker(name -> {
-                    return String.format("Hello %s!", name);
-                });
+        SimpleCircuitBreaker<String, String> circuitBreaker = new SimpleCircuitBreaker(protectedFunction);
         assertEquals("Hello Gerardo!", circuitBreaker.call("Gerardo"));
         assertEquals(SimpleCircuitBreaker.Status.CLOSED, circuitBreaker.getStatus());
     }
@@ -21,13 +33,7 @@ public class SimpleCircuitBreakerTest {
     public void functionCallFailedAndIsUnderFailureThreshold() {
         System.out.println("Test - Function call failed and is under the failure threshold [Closed status]");
         int failureThreshold = 3;
-        SimpleCircuitBreaker<String, String> circuitBreaker = new SimpleCircuitBreaker(
-                name -> {
-                    if (name != null) {
-                        return String.format("Hello %s!", name);
-                    }
-                    throw new IllegalArgumentException("Invalid argument: name cannot be null");
-                },
+        SimpleCircuitBreaker<String, String> circuitBreaker = new SimpleCircuitBreaker(protectedFunction,
                 failureThreshold);
 
         assertEquals(SimpleCircuitBreaker.Status.CLOSED, circuitBreaker.getStatus());
@@ -40,13 +46,7 @@ public class SimpleCircuitBreakerTest {
     public void functionCallFailedAndFailureCountReachesThreshold() {
         System.out.println("Test - Function call failed and is failure count reaches threshold [Goes to Open status]");
         int failureThreshold = 3;
-        SimpleCircuitBreaker<String, String> circuitBreaker = new SimpleCircuitBreaker(
-                name -> {
-                    if (name != null) {
-                        return String.format("Hello %s!", name);
-                    }
-                    throw new IllegalArgumentException("Invalid argument: name cannot be null");
-                },
+        SimpleCircuitBreaker<String, String> circuitBreaker = new SimpleCircuitBreaker(protectedFunction,
                 failureThreshold);
 
         assertEquals(SimpleCircuitBreaker.Status.CLOSED, circuitBreaker.getStatus());
