@@ -10,6 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class SimpleCircuitBreakerTest {
 
     private Function<String, String> protectedFunction;
+    private Function<String, String> fallbackFunction;
 
     @BeforeEach
     public void setup() {
@@ -18,6 +19,10 @@ public class SimpleCircuitBreakerTest {
                 return String.format("Hello %s!", name);
             }
             throw new IllegalArgumentException("Invalid argument: name cannot be null");
+        };
+
+        fallbackFunction = arg -> {
+            return "Hello World!";
         };
     }
 
@@ -53,6 +58,21 @@ public class SimpleCircuitBreakerTest {
         callFailedFunctionUntilReachesThreshold(circuitBreaker);
         assertEquals(circuitBreaker.getFailureThreshold(), circuitBreaker.getFailureCount());
         assertEquals(SimpleCircuitBreaker.Status.OPEN, circuitBreaker.getStatus());
+    }
+
+    @Test
+    public void callFunctionOnOpenStateUnderRetryTimeout() throws Exception {
+        System.out.println("Test - Call function on Open state under retry timeout");
+        int failureThreshold = 3;
+        long retryTimeout = 5000L;
+        SimpleCircuitBreaker<String, String> circuitBreaker = new SimpleCircuitBreaker(protectedFunction,
+                failureThreshold, retryTimeout, fallbackFunction);
+
+        assertEquals(SimpleCircuitBreaker.Status.CLOSED, circuitBreaker.getStatus());
+        callFailedFunctionUntilReachesThreshold(circuitBreaker);
+        assertEquals("Hello World!", circuitBreaker.call("Gerardo"));
+        assertEquals(SimpleCircuitBreaker.Status.OPEN, circuitBreaker.getStatus());
+
     }
 
     private void callFailedFunctionUntilUnderThreshold(SimpleCircuitBreaker<String, String> circuitBreaker) {
