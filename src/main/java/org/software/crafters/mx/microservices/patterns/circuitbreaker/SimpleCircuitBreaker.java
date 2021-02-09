@@ -13,7 +13,7 @@ public class SimpleCircuitBreaker<T, R> {
     private final Function<T, R> fallbackFunction;
     private Status status;
     private int failureCount;
-    private long lastFailureTimestamp;
+    private long lastFailureTime;
 
     public SimpleCircuitBreaker(Function<T, R> protectedFunction) {
         this(protectedFunction, DEFAULT_FAILURE_THRESHOLD);
@@ -31,6 +31,7 @@ public class SimpleCircuitBreaker<T, R> {
         this.fallbackFunction = fallbackFunction;
         this.status = Status.CLOSED;
         this.failureCount = 0;
+        this.lastFailureTime = 0;
     }
 
     public R call(T arg) throws Exception {
@@ -40,7 +41,7 @@ public class SimpleCircuitBreaker<T, R> {
                     return protectedFunction.apply(arg);
                 } catch (Exception e) {
                     failureCount++;
-                    lastFailureTimestamp = System.currentTimeMillis();
+                    lastFailureTime = System.currentTimeMillis();
                     if (failureCountReachesThreshold()) {
                         trip();
                     }
@@ -49,8 +50,14 @@ public class SimpleCircuitBreaker<T, R> {
             case OPEN:
                 if (isUnderRetryTimeout()) {
                     return fallbackFunction.apply(arg);
+                } else {
+                    this.status = Status.HALF_OPEN;
+                    R result = protectedFunction.apply(arg);
+                    this.status = Status.CLOSED;
+                    this.failureCount = 0;
+                    this.lastFailureTime = 0;
+                    return result;
                 }
-                break;
         }
         return null;
     }
@@ -63,9 +70,13 @@ public class SimpleCircuitBreaker<T, R> {
         this.status = Status.OPEN;
     }
 
+    private void goToHalOpenState() {
+        this.status = Status.HALF_OPEN;
+    }
+
     private boolean isUnderRetryTimeout() {
-        long elapsedTimeLastFailure = System.currentTimeMillis() - lastFailureTimestamp;
-        return elapsedTimeLastFailure < retryTimeout;
+        long elapsedTimeFromLastFailure = System.currentTimeMillis() - lastFailureTime;
+        return elapsedTimeFromLastFailure < retryTimeout;
     }
 
     public Status getStatus() {
@@ -80,5 +91,9 @@ public class SimpleCircuitBreaker<T, R> {
         return failureCount;
     }
 
-    public enum Status {OPEN, CLOSED}
+    public long getLastFailureTime() {
+        return lastFailureTime;
+    }
+
+    public enum Status {CLOSED, OPEN, HALF_OPEN}
 }

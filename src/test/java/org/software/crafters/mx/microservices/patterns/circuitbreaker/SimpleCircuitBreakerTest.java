@@ -85,10 +85,11 @@ public class SimpleCircuitBreakerTest {
 
         assertEquals(SimpleCircuitBreaker.Status.CLOSED, circuitBreaker.getStatus());
         callFailedFunctionUntilReachesThreshold(circuitBreaker);
-        TimeUnit.MILLISECONDS.wait(1100L);
+        TimeUnit.MILLISECONDS.sleep(1100L);
         assertEquals("Hello Gerardo!", circuitBreaker.call("Gerardo"));
         assertEquals(SimpleCircuitBreaker.Status.CLOSED, circuitBreaker.getStatus());
         assertEquals(0, circuitBreaker.getFailureCount());
+        assertEquals(0L, circuitBreaker.getLastFailureTime());
     }
 
     private void callFailedFunctionUntilUnderThreshold(SimpleCircuitBreaker<String, String> circuitBreaker) {
