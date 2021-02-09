@@ -7,6 +7,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class SimpleCircuitBreakerTest {
 
@@ -62,8 +63,8 @@ public class SimpleCircuitBreakerTest {
     }
 
     @Test
-    public void callFunctionOnOpenStateUnderRetryTimeout() throws Exception {
-        System.out.println("Test - Call function on Open state under retry timeout");
+    public void callFunctionOnOpenStatusUnderRetryTimeout() throws Exception {
+        System.out.println("Test - Call function on Open status under retry timeout");
         int failureThreshold = 3;
         long retryTimeout = 5000L;
         SimpleCircuitBreaker<String, String> circuitBreaker = new SimpleCircuitBreaker(protectedFunction,
@@ -76,20 +77,38 @@ public class SimpleCircuitBreakerTest {
     }
 
     @Test
-    public void functionCallOnHalfOpenStateSuccessfully() throws Exception {
-        System.out.println("Test - Function call on Half-Open successfully");
+    public void functionCallOnHalfOpenStatusSuccessfully() throws Exception {
+        System.out.println("Test - Function call on Half-Open status successfully");
         int failureThreshold = 3;
-        long retryTimeout = 1000L;
+        long retryTimeout = 100L;
         SimpleCircuitBreaker<String, String> circuitBreaker = new SimpleCircuitBreaker(protectedFunction,
                 failureThreshold, retryTimeout, fallbackFunction);
 
         assertEquals(SimpleCircuitBreaker.Status.CLOSED, circuitBreaker.getStatus());
         callFailedFunctionUntilReachesThreshold(circuitBreaker);
-        TimeUnit.MILLISECONDS.sleep(1100L);
+        TimeUnit.MILLISECONDS.sleep(150L);
         assertEquals("Hello Gerardo!", circuitBreaker.call("Gerardo"));
         assertEquals(SimpleCircuitBreaker.Status.CLOSED, circuitBreaker.getStatus());
         assertEquals(0, circuitBreaker.getFailureCount());
         assertEquals(0L, circuitBreaker.getLastFailureTime());
+    }
+
+    @Test
+    public void functionCallOnHalfOpenStatusFailed() throws Exception {
+        System.out.println("Test - Function call on Half-Open status failed");
+        int failureThreshold = 3;
+        long retryTimeout = 100L;
+        SimpleCircuitBreaker<String, String> circuitBreaker = new SimpleCircuitBreaker(protectedFunction,
+                failureThreshold, retryTimeout, fallbackFunction);
+
+        assertEquals(SimpleCircuitBreaker.Status.CLOSED, circuitBreaker.getStatus());
+        callFailedFunctionUntilReachesThreshold(circuitBreaker);
+        long timeFailureReachesThreshold = circuitBreaker.getLastFailureTime();
+        TimeUnit.MILLISECONDS.sleep(150L);
+        assertEquals("Hello World!", circuitBreaker.call(null));
+        assertEquals(SimpleCircuitBreaker.Status.OPEN, circuitBreaker.getStatus());
+        assertEquals(failureThreshold + 1, circuitBreaker.getFailureCount());
+        assertTrue(circuitBreaker.getLastFailureTime() > timeFailureReachesThreshold);
     }
 
     private void callFailedFunctionUntilUnderThreshold(SimpleCircuitBreaker<String, String> circuitBreaker) {
