@@ -76,6 +76,24 @@ public class SimpleCircuitBreakerTest {
         assertEquals(SimpleCircuitBreaker.Status.OPEN, circuitBreaker.getStatus());
     }
 
+    @Test()
+    public void callFunctionOnOpenStatusUnderRetryTimeoutWithoutFallbackFunction() throws Exception {
+        System.out.println("Test - Call function on Open status under retry timeout without fallback function");
+        int failureThreshold = 3;
+        long retryTimeout = 5000L;
+        SimpleCircuitBreaker<String, String> circuitBreaker = new SimpleCircuitBreaker(protectedFunction,
+                failureThreshold, retryTimeout, null);
+
+        assertEquals(SimpleCircuitBreaker.Status.CLOSED, circuitBreaker.getStatus());
+        callFailedFunctionUntilReachesThreshold(circuitBreaker);
+        try {
+            circuitBreaker.call(null);
+        } catch (Exception e) {
+            assertTrue(e instanceof IllegalArgumentException);
+            assertEquals(SimpleCircuitBreaker.Status.OPEN, circuitBreaker.getStatus());
+        }
+    }
+
     @Test
     public void functionCallOnHalfOpenStatusSuccessfully() throws Exception {
         System.out.println("Test - Function call on Half-Open status successfully");
