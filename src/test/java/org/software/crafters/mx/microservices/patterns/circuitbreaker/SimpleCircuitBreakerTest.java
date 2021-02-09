@@ -3,6 +3,7 @@ package org.software.crafters.mx.microservices.patterns.circuitbreaker;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -72,6 +73,22 @@ public class SimpleCircuitBreakerTest {
         callFailedFunctionUntilReachesThreshold(circuitBreaker);
         assertEquals("Hello World!", circuitBreaker.call(null));
         assertEquals(SimpleCircuitBreaker.Status.OPEN, circuitBreaker.getStatus());
+    }
+
+    @Test
+    public void functionCallOnHalfOpenStateSuccessfully() throws Exception {
+        System.out.println("Test - Function call on Half-Open successfully");
+        int failureThreshold = 3;
+        long retryTimeout = 1000L;
+        SimpleCircuitBreaker<String, String> circuitBreaker = new SimpleCircuitBreaker(protectedFunction,
+                failureThreshold, retryTimeout, fallbackFunction);
+
+        assertEquals(SimpleCircuitBreaker.Status.CLOSED, circuitBreaker.getStatus());
+        callFailedFunctionUntilReachesThreshold(circuitBreaker);
+        TimeUnit.MILLISECONDS.wait(1100L);
+        assertEquals("Hello Gerardo!", circuitBreaker.call("Gerardo"));
+        assertEquals(SimpleCircuitBreaker.Status.CLOSED, circuitBreaker.getStatus());
+        assertEquals(0, circuitBreaker.getFailureCount());
     }
 
     private void callFailedFunctionUntilUnderThreshold(SimpleCircuitBreaker<String, String> circuitBreaker) {
