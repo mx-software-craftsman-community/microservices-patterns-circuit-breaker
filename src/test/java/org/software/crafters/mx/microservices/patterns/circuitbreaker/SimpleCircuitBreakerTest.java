@@ -70,9 +70,8 @@ public class SimpleCircuitBreakerTest {
 
         assertEquals(SimpleCircuitBreaker.Status.CLOSED, circuitBreaker.getStatus());
         callFailedFunctionUntilReachesThreshold(circuitBreaker);
-        assertEquals("Hello World!", circuitBreaker.call("Gerardo"));
+        assertEquals("Hello World!", circuitBreaker.call(null));
         assertEquals(SimpleCircuitBreaker.Status.OPEN, circuitBreaker.getStatus());
-
     }
 
     private void callFailedFunctionUntilUnderThreshold(SimpleCircuitBreaker<String, String> circuitBreaker) {
