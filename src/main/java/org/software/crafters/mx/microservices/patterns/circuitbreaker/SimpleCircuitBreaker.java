@@ -52,18 +52,27 @@ public class SimpleCircuitBreaker<T, R> {
                     return fallbackFunction.apply(arg);
                 } else {
                     this.status = Status.HALF_OPEN;
-                    R result = protectedFunction.apply(arg);
-                    this.status = Status.CLOSED;
-                    this.failureCount = 0;
-                    this.lastFailureTime = 0;
-                    return result;
+                    try {
+                        R result = protectedFunction.apply(arg);
+                        this.status = Status.CLOSED;
+                        this.failureCount = 0;
+                        this.lastFailureTime = 0;
+                        return result;
+                    } catch (Exception e) {
+                        failureCount++;
+                        lastFailureTime = System.currentTimeMillis();
+                        if (failureCountReachesThreshold()) {
+                            trip();
+                        }
+                        return fallbackFunction.apply(arg);
+                    }
                 }
         }
         return null;
     }
 
     private boolean failureCountReachesThreshold() {
-        return failureCount == failureThreshold;
+        return failureCount >= failureThreshold;
     }
 
     private void trip() {
