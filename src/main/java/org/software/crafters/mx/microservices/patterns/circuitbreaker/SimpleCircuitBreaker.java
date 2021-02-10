@@ -11,7 +11,6 @@ public class SimpleCircuitBreaker<T, R> {
     private final int failureThreshold;
     private final long retryTimeout;
     private final Function<T, R> fallbackFunction;
-    private Status status;
     private int failureCount;
     private long lastFailureTime;
 
@@ -30,41 +29,30 @@ public class SimpleCircuitBreaker<T, R> {
         this.failureThreshold = failureThreshold;
         this.retryTimeout = retryTimeout;
         this.fallbackFunction = fallbackFunction;
-        this.status = Status.CLOSED;
         this.failureCount = 0;
         this.lastFailureTime = 0;
     }
 
     public R call(T arg) throws Exception {
-        switch (status) {
+        switch (getStatus()) {
             case CLOSED:
                 try {
                     return protectedFunction.apply(arg);
                 } catch (Exception e) {
                     registerFailure(e);
-                    if (failureCountReachesThreshold()) {
-                        trip();
-                    }
                     throw e;
                 }
             case OPEN:
-                if (isUnderRetryTimeout()) {
+                return fallbackFunction.apply(arg);
+            case HALF_OPEN:
+                try {
+                    R result = protectedFunction.apply(arg);
+                    this.failureCount = 0;
+                    this.lastFailureTime = 0;
+                    return result;
+                } catch (Exception e) {
+                    registerFailure(e);
                     return fallbackFunction.apply(arg);
-                } else {
-                    this.status = Status.HALF_OPEN;
-                    try {
-                        R result = protectedFunction.apply(arg);
-                        this.status = Status.CLOSED;
-                        this.failureCount = 0;
-                        this.lastFailureTime = 0;
-                        return result;
-                    } catch (Exception e) {
-                        registerFailure(e);
-                        if (failureCountReachesThreshold()) {
-                            trip();
-                        }
-                        return fallbackFunction.apply(arg);
-                    }
                 }
         }
         return null;
@@ -75,16 +63,8 @@ public class SimpleCircuitBreaker<T, R> {
         lastFailureTime = System.currentTimeMillis();
     }
 
-    private boolean failureCountReachesThreshold() {
-        return failureCount >= failureThreshold;
-    }
-
-    private void trip() {
-        this.status = Status.OPEN;
-    }
-
-    private void goToHalOpenState() {
-        this.status = Status.HALF_OPEN;
+    private boolean isFailureCountUnderThreshold() {
+        return failureCount < failureThreshold;
     }
 
     private boolean isUnderRetryTimeout() {
@@ -93,7 +73,15 @@ public class SimpleCircuitBreaker<T, R> {
     }
 
     public Status getStatus() {
-        return status;
+        if (isFailureCountUnderThreshold()) {
+            return Status.CLOSED;
+        } else {
+            if (isUnderRetryTimeout()) {
+                return Status.OPEN;
+            } else {
+                return Status.HALF_OPEN;
+            }
+        }
     }
 
     public int getFailureThreshold() {
