@@ -15,12 +15,13 @@ public class SimpleCircuitBreaker<T, R> {
     private int failureCount;
     private long lastFailureTime;
 
-    public SimpleCircuitBreaker(Function<T, R> protectedFunction) {
-        this(protectedFunction, DEFAULT_FAILURE_THRESHOLD);
+    public SimpleCircuitBreaker(Function<T, R> protectedFunction, Function<T, R> fallbackFunction) {
+        this(protectedFunction, DEFAULT_FAILURE_THRESHOLD, DEFAULT_RETRY_TIMEOUT, fallbackFunction);
     }
 
-    public SimpleCircuitBreaker(Function<T, R> protectedFunction, int failureThreshold) {
-        this(protectedFunction, failureThreshold, DEFAULT_RETRY_TIMEOUT, null);
+    public SimpleCircuitBreaker(Function<T, R> protectedFunction, int failureThreshold,
+                                Function<T, R> fallbackFunction) {
+        this(protectedFunction, failureThreshold, DEFAULT_RETRY_TIMEOUT, fallbackFunction);
     }
 
     public SimpleCircuitBreaker(Function<T, R> protectedFunction, int failureThreshold, long retryTimeout,

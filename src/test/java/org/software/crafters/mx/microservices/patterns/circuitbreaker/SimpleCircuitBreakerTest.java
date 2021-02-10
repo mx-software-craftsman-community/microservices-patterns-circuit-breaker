@@ -31,7 +31,8 @@ public class SimpleCircuitBreakerTest {
     @Test
     public void callFunctionSuccessfully() throws Exception {
         System.out.println("Test - Call function successfully [Closed status]");
-        SimpleCircuitBreaker<String, String> circuitBreaker = new SimpleCircuitBreaker(protectedFunction);
+        SimpleCircuitBreaker<String, String> circuitBreaker = new SimpleCircuitBreaker(protectedFunction,
+                fallbackFunction);
         assertEquals("Hello Gerardo!", circuitBreaker.call("Gerardo"));
         assertEquals(SimpleCircuitBreaker.Status.CLOSED, circuitBreaker.getStatus());
     }
@@ -41,7 +42,7 @@ public class SimpleCircuitBreakerTest {
         System.out.println("Test - Function call failed and is under the failure threshold [Closed status]");
         int failureThreshold = 3;
         SimpleCircuitBreaker<String, String> circuitBreaker = new SimpleCircuitBreaker(protectedFunction,
-                failureThreshold);
+                failureThreshold, fallbackFunction);
 
         assertEquals(SimpleCircuitBreaker.Status.CLOSED, circuitBreaker.getStatus());
         callFailedFunctionUntilUnderThreshold(circuitBreaker);
@@ -54,7 +55,7 @@ public class SimpleCircuitBreakerTest {
         System.out.println("Test - Function call failed and is failure count reaches threshold [Goes to Open status]");
         int failureThreshold = 3;
         SimpleCircuitBreaker<String, String> circuitBreaker = new SimpleCircuitBreaker(protectedFunction,
-                failureThreshold);
+                failureThreshold, fallbackFunction);
 
         assertEquals(SimpleCircuitBreaker.Status.CLOSED, circuitBreaker.getStatus());
         callFailedFunctionUntilReachesThreshold(circuitBreaker);
