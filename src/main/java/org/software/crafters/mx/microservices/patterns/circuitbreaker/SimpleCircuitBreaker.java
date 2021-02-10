@@ -31,12 +31,12 @@ public class SimpleCircuitBreaker<T, R> {
         this.failureMonitor = new FailureMonitor();
     }
 
-    public R call(T arg) throws Exception {
+    public R call(T arg) throws RuntimeException {
         switch (getState()) {
             case CLOSED:
                 try {
                     return protectedFunction.apply(arg);
-                } catch (Exception e) {
+                } catch (RuntimeException e) {
                     failureMonitor.update(e);
                     throw e;
                 }
@@ -48,7 +48,7 @@ public class SimpleCircuitBreaker<T, R> {
                     R result = protectedFunction.apply(arg);
                     failureMonitor.reset();
                     return result;
-                } catch (Exception e) {
+                } catch (RuntimeException e) {
                     failureMonitor.update(e);
                     return fallbackFunction.apply(arg);
                 }
