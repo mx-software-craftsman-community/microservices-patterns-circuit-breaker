@@ -11,7 +11,7 @@ public class SimpleCircuitBreaker<T, R> {
     private final int failureThreshold;
     private final long retryTimeout;
     private final Function<T, R> fallbackFunction;
-    private FailureMonitor failureMonitor;
+    private final FailureMonitor failureMonitor;
 
     public SimpleCircuitBreaker(Function<T, R> protectedFunction, Function<T, R> fallbackFunction) {
         this(protectedFunction, DEFAULT_FAILURE_THRESHOLD, DEFAULT_RETRY_TIMEOUT, fallbackFunction);
@@ -43,6 +43,7 @@ public class SimpleCircuitBreaker<T, R> {
             case OPEN:
                 return fallbackFunction.apply(arg);
             case HALF_OPEN:
+            default:
                 try {
                     R result = protectedFunction.apply(arg);
                     failureMonitor.reset();
@@ -52,7 +53,6 @@ public class SimpleCircuitBreaker<T, R> {
                     return fallbackFunction.apply(arg);
                 }
         }
-        return null;
     }
 
     private boolean isFailureCountUnderThreshold() {
