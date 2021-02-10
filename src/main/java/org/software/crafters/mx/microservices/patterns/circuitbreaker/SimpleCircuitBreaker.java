@@ -41,8 +41,7 @@ public class SimpleCircuitBreaker<T, R> {
                 try {
                     return protectedFunction.apply(arg);
                 } catch (Exception e) {
-                    failureCount++;
-                    lastFailureTime = System.currentTimeMillis();
+                    registerFailure(e);
                     if (failureCountReachesThreshold()) {
                         trip();
                     }
@@ -60,8 +59,7 @@ public class SimpleCircuitBreaker<T, R> {
                         this.lastFailureTime = 0;
                         return result;
                     } catch (Exception e) {
-                        failureCount++;
-                        lastFailureTime = System.currentTimeMillis();
+                        registerFailure(e);
                         if (failureCountReachesThreshold()) {
                             trip();
                         }
@@ -70,6 +68,11 @@ public class SimpleCircuitBreaker<T, R> {
                 }
         }
         return null;
+    }
+
+    private void registerFailure(Exception e) {
+        failureCount++;
+        lastFailureTime = System.currentTimeMillis();
     }
 
     private boolean failureCountReachesThreshold() {
