@@ -32,7 +32,7 @@ public class SimpleCircuitBreaker<T, R> {
     }
 
     public R call(T arg) throws Exception {
-        switch (getStatus()) {
+        switch (getState()) {
             case CLOSED:
                 try {
                     return protectedFunction.apply(arg);
@@ -64,14 +64,14 @@ public class SimpleCircuitBreaker<T, R> {
         return elapsedTimeFromLastFailure < retryTimeout;
     }
 
-    public Status getStatus() {
+    public State getState() {
         if (isFailureCountUnderThreshold()) {
-            return Status.CLOSED;
+            return State.CLOSED;
         } else {
             if (isUnderRetryTimeout()) {
-                return Status.OPEN;
+                return State.OPEN;
             } else {
-                return Status.HALF_OPEN;
+                return State.HALF_OPEN;
             }
         }
     }
@@ -92,7 +92,7 @@ public class SimpleCircuitBreaker<T, R> {
         return failureMonitor.getLastFailureTime();
     }
 
-    public enum Status {CLOSED, OPEN, HALF_OPEN}
+    public enum State {CLOSED, OPEN, HALF_OPEN}
 
     private static class FailureMonitor {
         private int failureCount;
