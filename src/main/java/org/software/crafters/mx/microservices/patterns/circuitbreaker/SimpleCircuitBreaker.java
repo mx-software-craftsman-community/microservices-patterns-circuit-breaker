@@ -29,8 +29,7 @@ public class SimpleCircuitBreaker<T, R> {
         this.failureThreshold = failureThreshold;
         this.retryTimeout = retryTimeout;
         this.fallbackFunction = fallbackFunction;
-        this.failureCount = 0;
-        this.lastFailureTime = 0;
+        reset();
     }
 
     public R call(T arg) throws Exception {
@@ -47,8 +46,7 @@ public class SimpleCircuitBreaker<T, R> {
             case HALF_OPEN:
                 try {
                     R result = protectedFunction.apply(arg);
-                    this.failureCount = 0;
-                    this.lastFailureTime = 0;
+                    reset();
                     return result;
                 } catch (Exception e) {
                     registerFailure(e);
@@ -56,6 +54,11 @@ public class SimpleCircuitBreaker<T, R> {
                 }
         }
         return null;
+    }
+
+    private void reset() {
+        this.failureCount = 0;
+        this.lastFailureTime = 0;
     }
 
     private void registerFailure(Exception e) {
