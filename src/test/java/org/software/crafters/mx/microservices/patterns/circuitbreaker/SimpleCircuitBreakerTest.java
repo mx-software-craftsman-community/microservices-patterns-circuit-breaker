@@ -29,8 +29,8 @@ public class SimpleCircuitBreakerTest {
     }
 
     @Test
-    public void callFunctionSuccessfully() throws Exception {
-        System.out.println("Test - Call function successfully [Closed state]");
+    public void functionCallSuccessfully() throws Exception {
+        System.out.println("Test - Function call successfully [Closed state]");
         SimpleCircuitBreaker<String, String> circuitBreaker = new SimpleCircuitBreaker(protectedFunction,
                 fallbackFunction);
         assertEquals("Hello Gerardo!", circuitBreaker.call("Gerardo"));
@@ -64,8 +64,8 @@ public class SimpleCircuitBreakerTest {
     }
 
     @Test
-    public void callFunctionOnOpenStateUnderRetryTimeout() throws Exception {
-        System.out.println("Test - Call function on Open state under retry timeout");
+    public void functionCallOnOpenStateUnderRetryTimeout() throws Exception {
+        System.out.println("Test - Function call on Open state under retry timeout");
         int failureThreshold = 3;
         long retryTimeout = 5000L;
         SimpleCircuitBreaker<String, String> circuitBreaker = new SimpleCircuitBreaker(protectedFunction,
