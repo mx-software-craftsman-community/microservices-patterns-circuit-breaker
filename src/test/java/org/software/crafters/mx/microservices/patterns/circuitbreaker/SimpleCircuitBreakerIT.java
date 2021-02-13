@@ -71,6 +71,20 @@ public class SimpleCircuitBreakerIT {
         assertEquals(SimpleCircuitBreaker.State.OPEN, circuitBreaker.getState());
     }
 
+    @Test
+    public void functionCallOnOpenStateUnderRetryTimeout() throws Exception {
+        System.out.println("Integration Test - Function call on Open state under retry timeout");
+        int failureThreshold = 3;
+        long retryTimeout = 5000L;
+        SimpleCircuitBreaker<String, String> circuitBreaker = new SimpleCircuitBreaker(protectedFunction,
+                failureThreshold, retryTimeout, fallbackFunction);
+        HttpbinService service = new HttpbinService(circuitBreaker);
+
+        callFailedFunctionUntilReachesThreshold(service);
+        assertEquals("Hello World!", service.invokeGetMethod("/status/500"));
+        assertEquals(SimpleCircuitBreaker.State.OPEN, circuitBreaker.getState());
+    }
+
     private static class HttpbinService {
         private static final String URL_BASE = "https://httpbin.org";
 
