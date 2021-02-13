@@ -37,7 +37,7 @@ public class SimpleCircuitBreakerIT {
 
     @Test
     public void functionCallSuccessfully() {
-        System.out.println("Test - Function call successfully [Closed state]");
+        System.out.println("Integration Test - Function call successfully [Closed state]");
         SimpleCircuitBreaker<String, String> circuitBreaker = new SimpleCircuitBreaker<>(protectedFunction,
                 fallbackFunction);
         HttpbinService service = new HttpbinService(circuitBreaker);
@@ -47,7 +47,7 @@ public class SimpleCircuitBreakerIT {
 
     @Test
     public void functionCallFailedAndIsUnderFailureThreshold() {
-        System.out.println("Test - Function call failed and is under the failure threshold [Closed state]");
+        System.out.println("Integration Test - Function call failed and is under the failure threshold [Closed state]");
         int failureThreshold = 3;
         SimpleCircuitBreaker<String, String> circuitBreaker = new SimpleCircuitBreaker(protectedFunction,
                 failureThreshold, fallbackFunction);
@@ -56,6 +56,19 @@ public class SimpleCircuitBreakerIT {
         callFailedFunctionUntilUnderThreshold(service);
         assertEquals(circuitBreaker.getFailureThreshold() - 1, circuitBreaker.getFailureCount());
         assertEquals(SimpleCircuitBreaker.State.CLOSED, circuitBreaker.getState());
+    }
+
+    @Test
+    public void functionCallFailedAndFailureCountReachesThreshold() {
+        System.out.println("Integration Test - Function call failed and is failure count reaches threshold [Goes to Open state]");
+        int failureThreshold = 3;
+        SimpleCircuitBreaker<String, String> circuitBreaker = new SimpleCircuitBreaker(protectedFunction,
+                failureThreshold, fallbackFunction);
+        HttpbinService service = new HttpbinService(circuitBreaker);
+
+        callFailedFunctionUntilReachesThreshold(service);
+        assertEquals(circuitBreaker.getFailureThreshold(), circuitBreaker.getFailureCount());
+        assertEquals(SimpleCircuitBreaker.State.OPEN, circuitBreaker.getState());
     }
 
     private static class HttpbinService {
@@ -82,7 +95,18 @@ public class SimpleCircuitBreakerIT {
             try {
                 service.invokeGetMethod("/status/500");
             } catch (Exception e) {
-                System.out.println(e.getMessage());
+                System.out.println("Exception message: " + e.getMessage());
+            }
+        }
+    }
+
+    private void callFailedFunctionUntilReachesThreshold(HttpbinService service) {
+        SimpleCircuitBreaker<String, String> circuitBreaker = service.circuitBreaker;
+        while (circuitBreaker.getFailureCount() < circuitBreaker.getFailureThreshold()) {
+            try {
+                service.invokeGetMethod("/status/500");
+            } catch (Exception e) {
+                System.out.println("Exception message: " + e.getMessage());
             }
         }
     }
