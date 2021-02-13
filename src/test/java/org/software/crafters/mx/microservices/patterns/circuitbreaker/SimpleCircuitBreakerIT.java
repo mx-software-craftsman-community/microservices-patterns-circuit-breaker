@@ -6,6 +6,7 @@ import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -83,6 +84,24 @@ public class SimpleCircuitBreakerIT {
         callFailedFunctionUntilReachesThreshold(service);
         assertEquals("Hello World!", service.invokeGetMethod("/status/500"));
         assertEquals(SimpleCircuitBreaker.State.OPEN, circuitBreaker.getState());
+    }
+
+    @Test
+    public void functionCallOnHalfOpenStateSuccessfully() throws Exception {
+        System.out.println("Integration Test - Function call on Half-Open state successfully");
+        int failureThreshold = 3;
+        long retryTimeout = 100L;
+        SimpleCircuitBreaker<String, String> circuitBreaker = new SimpleCircuitBreaker(protectedFunction,
+                failureThreshold, retryTimeout, fallbackFunction);
+        HttpbinService service = new HttpbinService(circuitBreaker);
+
+        callFailedFunctionUntilReachesThreshold(service);
+        TimeUnit.MILLISECONDS.sleep(150L);
+        assertEquals(SimpleCircuitBreaker.State.HALF_OPEN, circuitBreaker.getState());
+        assertTrue(service.invokeGetMethod("/get").contains("https://httpbin.org/get"));
+        assertEquals(SimpleCircuitBreaker.State.CLOSED, circuitBreaker.getState());
+        assertEquals(0, circuitBreaker.getFailureCount());
+        assertEquals(0L, circuitBreaker.getLastFailureTime());
     }
 
     private static class HttpbinService {
