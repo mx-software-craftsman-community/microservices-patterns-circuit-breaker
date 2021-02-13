@@ -104,6 +104,25 @@ public class SimpleCircuitBreakerIT {
         assertEquals(0L, circuitBreaker.getLastFailureTime());
     }
 
+    @Test
+    public void functionCallOnHalfOpenStateFailed() throws Exception {
+        System.out.println("Integration Test - Function call on Half-Open state failed");
+        int failureThreshold = 3;
+        long retryTimeout = 100L;
+        SimpleCircuitBreaker<String, String> circuitBreaker = new SimpleCircuitBreaker(protectedFunction,
+                failureThreshold, retryTimeout, fallbackFunction);
+        HttpbinService service = new HttpbinService(circuitBreaker);
+
+        callFailedFunctionUntilReachesThreshold(service);
+        long timeFailureReachesThreshold = circuitBreaker.getLastFailureTime();
+        TimeUnit.MILLISECONDS.sleep(150L);
+        assertEquals(SimpleCircuitBreaker.State.HALF_OPEN, circuitBreaker.getState());
+        assertEquals("Hello World!", service.invokeGetMethod("/status/500"));
+        assertEquals(SimpleCircuitBreaker.State.OPEN, circuitBreaker.getState());
+        assertEquals(failureThreshold + 1, circuitBreaker.getFailureCount());
+        assertTrue(circuitBreaker.getLastFailureTime() > timeFailureReachesThreshold);
+    }
+
     private static class HttpbinService {
         private static final String URL_BASE = "https://httpbin.org";
 
