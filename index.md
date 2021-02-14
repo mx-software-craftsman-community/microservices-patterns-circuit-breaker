@@ -59,5 +59,6 @@ Threads are not waiting for an unresponsive call, for example.
 
 ## Bibliography
 
-[Martin Fowler’s Circuit Breaker blog post](https://martinfowler.com/bliki/CircuitBreaker.html)
+[Martin Fowler’s Circuit Breaker blog post](https://martinfowler.com/bliki/CircuitBreaker.html)  
+
 [DZone’s Circuit Breaker Pattern](https://dzone.com/articles/circuit-breaker-pattern)
