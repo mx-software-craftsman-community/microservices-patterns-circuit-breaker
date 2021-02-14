@@ -7,27 +7,27 @@ public class SimpleCircuitBreaker<T, R> {
     private static final int DEFAULT_FAILURE_THRESHOLD = 1;
     private static final long DEFAULT_RETRY_TIMEOUT = 3000L;
 
-    private final Function<T, R> protectedFunction;
+    private final Function<T, R> remoteCall;
     private final int failureThreshold;
     private final long retryTimeout;
-    private final Function<T, R> fallbackFunction;
+    private final Function<T, R> fallbackMethod;
     private final FailureMonitor failureMonitor;
 
-    public SimpleCircuitBreaker(Function<T, R> protectedFunction, Function<T, R> fallbackFunction) {
-        this(protectedFunction, DEFAULT_FAILURE_THRESHOLD, DEFAULT_RETRY_TIMEOUT, fallbackFunction);
+    public SimpleCircuitBreaker(Function<T, R> remoteCall, Function<T, R> fallbackMethod) {
+        this(remoteCall, DEFAULT_FAILURE_THRESHOLD, DEFAULT_RETRY_TIMEOUT, fallbackMethod);
     }
 
-    public SimpleCircuitBreaker(Function<T, R> protectedFunction, int failureThreshold,
-                                Function<T, R> fallbackFunction) {
-        this(protectedFunction, failureThreshold, DEFAULT_RETRY_TIMEOUT, fallbackFunction);
+    public SimpleCircuitBreaker(Function<T, R> remoteCall, int failureThreshold,
+                                Function<T, R> fallbackMethod) {
+        this(remoteCall, failureThreshold, DEFAULT_RETRY_TIMEOUT, fallbackMethod);
     }
 
-    public SimpleCircuitBreaker(Function<T, R> protectedFunction, int failureThreshold, long retryTimeout,
-                                Function<T, R> fallbackFunction) {
-        this.protectedFunction = protectedFunction;
+    public SimpleCircuitBreaker(Function<T, R> remoteCall, int failureThreshold, long retryTimeout,
+                                Function<T, R> fallbackMethod) {
+        this.remoteCall = remoteCall;
         this.failureThreshold = failureThreshold;
         this.retryTimeout = retryTimeout;
-        this.fallbackFunction = fallbackFunction;
+        this.fallbackMethod = fallbackMethod;
         this.failureMonitor = new FailureMonitor();
     }
 
@@ -35,22 +35,22 @@ public class SimpleCircuitBreaker<T, R> {
         switch (getState()) {
             case CLOSED:
                 try {
-                    return protectedFunction.apply(arg);
+                    return remoteCall.apply(arg);
                 } catch (RuntimeException e) {
                     failureMonitor.update(e);
                     throw e;
                 }
             case OPEN:
-                return fallbackFunction.apply(arg);
+                return fallbackMethod.apply(arg);
             case HALF_OPEN:
             default:
                 try {
-                    R result = protectedFunction.apply(arg);
+                    R result = remoteCall.apply(arg);
                     failureMonitor.reset();
                     return result;
                 } catch (RuntimeException e) {
                     failureMonitor.update(e);
-                    return fallbackFunction.apply(arg);
+                    return fallbackMethod.apply(arg);
                 }
         }
     }

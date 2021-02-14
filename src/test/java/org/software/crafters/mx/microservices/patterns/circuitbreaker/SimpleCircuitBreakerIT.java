@@ -16,8 +16,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class SimpleCircuitBreakerIT {
 
     private RestTemplate restTemplate;
-    private Function<String, String> protectedFunction;
-    private Function<String, String> fallbackFunction;
+    private Function<String, String> remoteCall;
+    private Function<String, String> fallbackMethod;
 
     public SimpleCircuitBreakerIT() {
         RestTemplateBuilder restTemplateBuilder = new RestTemplateBuilder();
@@ -26,12 +26,12 @@ public class SimpleCircuitBreakerIT {
 
     @BeforeEach
     public void setup() {
-        protectedFunction = url -> {
+        remoteCall = url -> {
             ResponseEntity<String> responseEntity = restTemplate.getForEntity(url, String.class);
             return responseEntity.getBody();
         };
 
-        fallbackFunction = url -> {
+        fallbackMethod = url -> {
             return "Hello World!";
         };
     }
@@ -39,8 +39,7 @@ public class SimpleCircuitBreakerIT {
     @Test
     public void functionCallSuccessfully() {
         System.out.println("Integration Test - Function call successfully [Closed state]");
-        SimpleCircuitBreaker<String, String> circuitBreaker = new SimpleCircuitBreaker<>(protectedFunction,
-                fallbackFunction);
+        SimpleCircuitBreaker<String, String> circuitBreaker = new SimpleCircuitBreaker<>(remoteCall, fallbackMethod);
         HttpbinService service = new HttpbinService(circuitBreaker);
         assertTrue(service.invokeGetMethod("/get").contains("https://httpbin.org/get"));
         assertEquals(SimpleCircuitBreaker.State.CLOSED, circuitBreaker.getState());
@@ -50,8 +49,8 @@ public class SimpleCircuitBreakerIT {
     public void functionCallFailedAndIsUnderFailureThreshold() {
         System.out.println("Integration Test - Function call failed and is under the failure threshold [Closed state]");
         int failureThreshold = 3;
-        SimpleCircuitBreaker<String, String> circuitBreaker = new SimpleCircuitBreaker(protectedFunction,
-                failureThreshold, fallbackFunction);
+        SimpleCircuitBreaker<String, String> circuitBreaker = new SimpleCircuitBreaker(remoteCall, failureThreshold,
+                fallbackMethod);
         HttpbinService service = new HttpbinService(circuitBreaker);
 
         callFailedFunctionUntilUnderThreshold(service);
@@ -63,8 +62,8 @@ public class SimpleCircuitBreakerIT {
     public void functionCallFailedAndFailureCountReachesThreshold() {
         System.out.println("Integration Test - Function call failed and is failure count reaches threshold [Goes to Open state]");
         int failureThreshold = 3;
-        SimpleCircuitBreaker<String, String> circuitBreaker = new SimpleCircuitBreaker(protectedFunction,
-                failureThreshold, fallbackFunction);
+        SimpleCircuitBreaker<String, String> circuitBreaker = new SimpleCircuitBreaker(remoteCall, failureThreshold,
+                fallbackMethod);
         HttpbinService service = new HttpbinService(circuitBreaker);
 
         callFailedFunctionUntilReachesThreshold(service);
@@ -77,8 +76,8 @@ public class SimpleCircuitBreakerIT {
         System.out.println("Integration Test - Function call on Open state under retry timeout");
         int failureThreshold = 3;
         long retryTimeout = 5000L;
-        SimpleCircuitBreaker<String, String> circuitBreaker = new SimpleCircuitBreaker(protectedFunction,
-                failureThreshold, retryTimeout, fallbackFunction);
+        SimpleCircuitBreaker<String, String> circuitBreaker = new SimpleCircuitBreaker(remoteCall, failureThreshold,
+                retryTimeout, fallbackMethod);
         HttpbinService service = new HttpbinService(circuitBreaker);
 
         callFailedFunctionUntilReachesThreshold(service);
@@ -91,8 +90,8 @@ public class SimpleCircuitBreakerIT {
         System.out.println("Integration Test - Function call on Half-Open state successfully");
         int failureThreshold = 3;
         long retryTimeout = 100L;
-        SimpleCircuitBreaker<String, String> circuitBreaker = new SimpleCircuitBreaker(protectedFunction,
-                failureThreshold, retryTimeout, fallbackFunction);
+        SimpleCircuitBreaker<String, String> circuitBreaker = new SimpleCircuitBreaker(remoteCall, failureThreshold,
+                retryTimeout, fallbackMethod);
         HttpbinService service = new HttpbinService(circuitBreaker);
 
         callFailedFunctionUntilReachesThreshold(service);
@@ -109,8 +108,8 @@ public class SimpleCircuitBreakerIT {
         System.out.println("Integration Test - Function call on Half-Open state failed");
         int failureThreshold = 3;
         long retryTimeout = 100L;
-        SimpleCircuitBreaker<String, String> circuitBreaker = new SimpleCircuitBreaker(protectedFunction,
-                failureThreshold, retryTimeout, fallbackFunction);
+        SimpleCircuitBreaker<String, String> circuitBreaker = new SimpleCircuitBreaker(remoteCall, failureThreshold,
+                retryTimeout, fallbackMethod);
         HttpbinService service = new HttpbinService(circuitBreaker);
 
         callFailedFunctionUntilReachesThreshold(service);
