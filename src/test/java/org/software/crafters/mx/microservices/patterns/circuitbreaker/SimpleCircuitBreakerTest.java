@@ -29,59 +29,59 @@ public class SimpleCircuitBreakerTest {
     }
 
     @Test
-    public void functionCallSuccessfully() throws Exception {
-        System.out.println("Test - Function call successfully [Closed state]");
+    public void callSuccessfully() throws Exception {
+        System.out.println("Test - Call successfully [Closed state]");
         SimpleCircuitBreaker<String, String> circuitBreaker = new SimpleCircuitBreaker(remoteCall, fallbackMethod);
         assertEquals("Hello Gerardo!", circuitBreaker.call("Gerardo"));
         assertEquals(SimpleCircuitBreaker.State.CLOSED, circuitBreaker.getState());
     }
 
     @Test
-    public void functionCallFailedAndIsUnderFailureThreshold() {
-        System.out.println("Test - Function call failed and is under the failure threshold [Closed state]");
+    public void callFailedAndFailureCountIsUnderFailureThreshold() {
+        System.out.println("Test - Call failed and failure count is under the failure threshold [Closed state]");
         int failureThreshold = 3;
         SimpleCircuitBreaker<String, String> circuitBreaker = new SimpleCircuitBreaker(remoteCall, failureThreshold,
                 fallbackMethod);
 
-        callFailedFunctionUntilUnderThreshold(circuitBreaker);
+        callFailedUntilBeingUnderThreshold(circuitBreaker);
         assertEquals(circuitBreaker.getFailureThreshold() - 1, circuitBreaker.getFailureCount());
         assertEquals(SimpleCircuitBreaker.State.CLOSED, circuitBreaker.getState());
     }
 
     @Test
-    public void functionCallFailedAndFailureCountReachesThreshold() {
-        System.out.println("Test - Function call failed and is failure count reaches threshold [Goes to Open state]");
+    public void callFailedAndFailureCountReachesThreshold() {
+        System.out.println("Test - Call failed and failure count reaches threshold [Goes to Open state]");
         int failureThreshold = 3;
         SimpleCircuitBreaker<String, String> circuitBreaker = new SimpleCircuitBreaker(remoteCall, failureThreshold,
                 fallbackMethod);
 
-        callFailedFunctionUntilReachesThreshold(circuitBreaker);
+        callFailedUntilReachesThreshold(circuitBreaker);
         assertEquals(circuitBreaker.getFailureThreshold(), circuitBreaker.getFailureCount());
         assertEquals(SimpleCircuitBreaker.State.OPEN, circuitBreaker.getState());
     }
 
     @Test
-    public void functionCallOnOpenStateUnderRetryTimeout() throws Exception {
-        System.out.println("Test - Function call on Open state under retry timeout");
+    public void callInOpenStateUnderRetryTimeout() throws Exception {
+        System.out.println("Test - Call in Open state under retry timeout [Calls the fallback method]");
         int failureThreshold = 3;
         long retryTimeout = 5000L;
         SimpleCircuitBreaker<String, String> circuitBreaker = new SimpleCircuitBreaker(remoteCall, failureThreshold,
                 retryTimeout, fallbackMethod);
 
-        callFailedFunctionUntilReachesThreshold(circuitBreaker);
+        callFailedUntilReachesThreshold(circuitBreaker);
         assertEquals("Hello World!", circuitBreaker.call(null));
         assertEquals(SimpleCircuitBreaker.State.OPEN, circuitBreaker.getState());
     }
 
     @Test
-    public void functionCallOnHalfOpenStateSuccessfully() throws Exception {
-        System.out.println("Test - Function call on Half-Open state successfully");
+    public void callInHalfOpenStateSuccessfully() throws Exception {
+        System.out.println("Test - Call in Half-Open state successfully [Goes to Closed state]");
         int failureThreshold = 3;
         long retryTimeout = 100L;
         SimpleCircuitBreaker<String, String> circuitBreaker = new SimpleCircuitBreaker(remoteCall, failureThreshold,
                 retryTimeout, fallbackMethod);
 
-        callFailedFunctionUntilReachesThreshold(circuitBreaker);
+        callFailedUntilReachesThreshold(circuitBreaker);
         TimeUnit.MILLISECONDS.sleep(150L);
         assertEquals(SimpleCircuitBreaker.State.HALF_OPEN, circuitBreaker.getState());
         assertEquals("Hello Gerardo!", circuitBreaker.call("Gerardo"));
@@ -91,14 +91,14 @@ public class SimpleCircuitBreakerTest {
     }
 
     @Test
-    public void functionCallOnHalfOpenStateFailed() throws Exception {
-        System.out.println("Test - Function call on Half-Open state failed");
+    public void callInHalfOpenStateFailed() throws Exception {
+        System.out.println("Test - Call in Half-Open state failed [Goes to Open state again]");
         int failureThreshold = 3;
         long retryTimeout = 100L;
         SimpleCircuitBreaker<String, String> circuitBreaker = new SimpleCircuitBreaker(remoteCall, failureThreshold,
                 retryTimeout, fallbackMethod);
 
-        callFailedFunctionUntilReachesThreshold(circuitBreaker);
+        callFailedUntilReachesThreshold(circuitBreaker);
         long timeFailureReachesThreshold = circuitBreaker.getLastFailureTime();
         TimeUnit.MILLISECONDS.sleep(150L);
         assertEquals(SimpleCircuitBreaker.State.HALF_OPEN, circuitBreaker.getState());
@@ -108,7 +108,7 @@ public class SimpleCircuitBreakerTest {
         assertTrue(circuitBreaker.getLastFailureTime() > timeFailureReachesThreshold);
     }
 
-    private void callFailedFunctionUntilUnderThreshold(SimpleCircuitBreaker<String, String> circuitBreaker) {
+    private void callFailedUntilBeingUnderThreshold(SimpleCircuitBreaker<String, String> circuitBreaker) {
         while (circuitBreaker.getFailureCount() < circuitBreaker.getFailureThreshold() - 1) {
             try {
                 circuitBreaker.call(null);
@@ -118,7 +118,7 @@ public class SimpleCircuitBreakerTest {
         }
     }
 
-    private void callFailedFunctionUntilReachesThreshold(SimpleCircuitBreaker<String, String> circuitBreaker) {
+    private void callFailedUntilReachesThreshold(SimpleCircuitBreaker<String, String> circuitBreaker) {
         while (circuitBreaker.getFailureCount() < circuitBreaker.getFailureThreshold()) {
             try {
                 circuitBreaker.call(null);
