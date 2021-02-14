@@ -12,7 +12,6 @@ import java.util.function.Function;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-
 public class SimpleCircuitBreakerIT {
 
     private RestTemplate restTemplate;
@@ -37,8 +36,8 @@ public class SimpleCircuitBreakerIT {
     }
 
     @Test
-    public void functionCallSuccessfully() {
-        System.out.println("Integration Test - Function call successfully [Closed state]");
+    public void callSuccessfully() {
+        System.out.println("Integration Test - Call successfully [Closed state]");
         SimpleCircuitBreaker<String, String> circuitBreaker = new SimpleCircuitBreaker<>(remoteCall, fallbackMethod);
         HttpbinService service = new HttpbinService(circuitBreaker);
         assertTrue(service.invokeGetMethod("/get").contains("https://httpbin.org/get"));
@@ -46,55 +45,55 @@ public class SimpleCircuitBreakerIT {
     }
 
     @Test
-    public void functionCallFailedAndIsUnderFailureThreshold() {
-        System.out.println("Integration Test - Function call failed and is under the failure threshold [Closed state]");
+    public void callFailedAndFailureCountIsUnderFailureThreshold() {
+        System.out.println("Integration Test - Call failed and failure count is under the failure threshold [Closed state]");
         int failureThreshold = 3;
         SimpleCircuitBreaker<String, String> circuitBreaker = new SimpleCircuitBreaker(remoteCall, failureThreshold,
                 fallbackMethod);
         HttpbinService service = new HttpbinService(circuitBreaker);
 
-        callFailedFunctionUntilUnderThreshold(service);
+        callFailedUntilBeingUnderThreshold(service);
         assertEquals(circuitBreaker.getFailureThreshold() - 1, circuitBreaker.getFailureCount());
         assertEquals(SimpleCircuitBreaker.State.CLOSED, circuitBreaker.getState());
     }
 
     @Test
-    public void functionCallFailedAndFailureCountReachesThreshold() {
-        System.out.println("Integration Test - Function call failed and is failure count reaches threshold [Goes to Open state]");
+    public void callFailedAndFailureCountReachesThreshold() {
+        System.out.println("Integration Test - Call failed and failure count reaches threshold [Goes to Open state]");
         int failureThreshold = 3;
         SimpleCircuitBreaker<String, String> circuitBreaker = new SimpleCircuitBreaker(remoteCall, failureThreshold,
                 fallbackMethod);
         HttpbinService service = new HttpbinService(circuitBreaker);
 
-        callFailedFunctionUntilReachesThreshold(service);
+        callFailedUntilReachesThreshold(service);
         assertEquals(circuitBreaker.getFailureThreshold(), circuitBreaker.getFailureCount());
         assertEquals(SimpleCircuitBreaker.State.OPEN, circuitBreaker.getState());
     }
 
     @Test
-    public void functionCallOnOpenStateUnderRetryTimeout() throws Exception {
-        System.out.println("Integration Test - Function call on Open state under retry timeout");
+    public void callInOpenStateUnderRetryTimeout() throws Exception {
+        System.out.println("Integration Test - Call in Open state under retry timeout [Calls the fallback method]");
         int failureThreshold = 3;
         long retryTimeout = 5000L;
         SimpleCircuitBreaker<String, String> circuitBreaker = new SimpleCircuitBreaker(remoteCall, failureThreshold,
                 retryTimeout, fallbackMethod);
         HttpbinService service = new HttpbinService(circuitBreaker);
 
-        callFailedFunctionUntilReachesThreshold(service);
+        callFailedUntilReachesThreshold(service);
         assertEquals("Hello World!", service.invokeGetMethod("/status/500"));
         assertEquals(SimpleCircuitBreaker.State.OPEN, circuitBreaker.getState());
     }
 
     @Test
-    public void functionCallOnHalfOpenStateSuccessfully() throws Exception {
-        System.out.println("Integration Test - Function call on Half-Open state successfully");
+    public void callInHalfOpenStateSuccessfully() throws Exception {
+        System.out.println("Integration Test - Call in Half-Open state successfully [Goes to Closed state]");
         int failureThreshold = 3;
         long retryTimeout = 100L;
         SimpleCircuitBreaker<String, String> circuitBreaker = new SimpleCircuitBreaker(remoteCall, failureThreshold,
                 retryTimeout, fallbackMethod);
         HttpbinService service = new HttpbinService(circuitBreaker);
 
-        callFailedFunctionUntilReachesThreshold(service);
+        callFailedUntilReachesThreshold(service);
         TimeUnit.MILLISECONDS.sleep(150L);
         assertEquals(SimpleCircuitBreaker.State.HALF_OPEN, circuitBreaker.getState());
         assertTrue(service.invokeGetMethod("/get").contains("https://httpbin.org/get"));
@@ -104,15 +103,15 @@ public class SimpleCircuitBreakerIT {
     }
 
     @Test
-    public void functionCallOnHalfOpenStateFailed() throws Exception {
-        System.out.println("Integration Test - Function call on Half-Open state failed");
+    public void callInHalfOpenStateFailed() throws Exception {
+        System.out.println("Integration Test - Call in Half-Open state failed [Goes to Open state again]");
         int failureThreshold = 3;
         long retryTimeout = 100L;
         SimpleCircuitBreaker<String, String> circuitBreaker = new SimpleCircuitBreaker(remoteCall, failureThreshold,
                 retryTimeout, fallbackMethod);
         HttpbinService service = new HttpbinService(circuitBreaker);
 
-        callFailedFunctionUntilReachesThreshold(service);
+        callFailedUntilReachesThreshold(service);
         long timeFailureReachesThreshold = circuitBreaker.getLastFailureTime();
         TimeUnit.MILLISECONDS.sleep(150L);
         assertEquals(SimpleCircuitBreaker.State.HALF_OPEN, circuitBreaker.getState());
@@ -140,7 +139,7 @@ public class SimpleCircuitBreakerIT {
         }
     }
 
-    private void callFailedFunctionUntilUnderThreshold(HttpbinService service) {
+    private void callFailedUntilBeingUnderThreshold(HttpbinService service) {
         SimpleCircuitBreaker<String, String> circuitBreaker = service.circuitBreaker;
         while (circuitBreaker.getFailureCount() < circuitBreaker.getFailureThreshold() - 1) {
             try {
@@ -151,7 +150,7 @@ public class SimpleCircuitBreakerIT {
         }
     }
 
-    private void callFailedFunctionUntilReachesThreshold(HttpbinService service) {
+    private void callFailedUntilReachesThreshold(HttpbinService service) {
         SimpleCircuitBreaker<String, String> circuitBreaker = service.circuitBreaker;
         while (circuitBreaker.getFailureCount() < circuitBreaker.getFailureThreshold()) {
             try {
